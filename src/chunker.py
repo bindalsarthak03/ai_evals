@@ -2,21 +2,9 @@ class DocumentChunker:
     
     def __init__(self,chunk_size=200):
         self.chunk_size = chunk_size
-    
-    def chunk_text(self,text):
-        sentences = text.split("\n")
-        chunks = []
-        
-        current_chunk = ""
-        
-        for sentence in sentences:
-            if len(current_chunk) + len(sentence) <= self.chunk_size:
-                current_chunk+=" "+sentence
-            else:
-                chunks.append(current_chunk.strip())
-                current_chunk = sentence
-            
-        if current_chunk:
-            chunks.append(current_chunk.strip())
-            
+
+    def chunk_text(self, text):
+
+        chunks = [line.strip() for line in text.split("\n") if line.strip()]
+
         return chunks

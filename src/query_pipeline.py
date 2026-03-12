@@ -8,8 +8,9 @@ def run_pipeline(question):
     evaluator = EvalsEngine()
     
     answer = llm.generate_answer(question)
-    context,metadata = retriever.retreive_context(question)
-    result = evaluator.evaluate(question,answer,context)
+    context,metadata = retriever.retreive_context(answer)
+    context_text = "\n".join(context)
+    result = evaluator.evaluate(question,answer,context_text)
     
     print("\nQuestion:", question)
     print("\nAnswer:", answer)
