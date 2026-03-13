@@ -1,5 +1,5 @@
-from embedder import Embedder
-from vector_store import VectorStore
+from core.embedder import Embedder
+from core.vector_store import VectorStore
 
 class Retriever:
     
@@ -7,7 +7,7 @@ class Retriever:
         self.embedder = Embedder()
         self.vector_store = VectorStore()
         
-    def retreive_context(self,question,top_k=3):
+    def retrieve_context(self,question,top_k=3):
         query_embedding = self.embedder.create_embeddings([question])[0]
         
         results = self.vector_store.collection.query(

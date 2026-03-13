@@ -1,3 +1,5 @@
-chroma_db/*
-src/__pycache__/*
 .env
+__pycache__/
+chroma_db/
+results/
+*.sqlite
