@@ -30,7 +30,8 @@ def save_result(record):
 
 def run(question):
 
-    router = Router()
+    router = Router("data/sample_db.sqlite")
+
     evaluator = EvalsEngine()
 
     decision = router.route(question)
