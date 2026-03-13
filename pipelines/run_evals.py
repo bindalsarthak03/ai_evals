@@ -1,9 +1,13 @@
 import json
+import os
 import time
 
-from retriever import Retriever
-from llm_generator import LLMGenerator
-from evals_engine import EvalsEngine
+from router.router import Router
+from agents.rag_agent import RAGAgent
+from agents.sql_agent import SQLAgent
+from evals.evals_engine import EvalsEngine
+from core.retriever import Retriever
+from core.llm_generator import LLMGenerator
 
 
 def run_evaluation(dataset_path):
@@ -11,66 +15,71 @@ def run_evaluation(dataset_path):
     with open(dataset_path, "r") as f:
         dataset = json.load(f)
 
+    router = Router()
     retriever = Retriever()
     llm = LLMGenerator()
+    rag_agent = RAGAgent(retriever, llm)
+    sql_agent = SQLAgent("data/sample_db.sqlite")
+
     evaluator = EvalsEngine()
 
     results = []
-    hallucinations = 0
 
     for item in dataset:
 
         question = item["question"]
 
-        answer = llm.generate_answer(question)
+        decision = router.route(question)
 
-        context, _ = retriever.retrieve_context(question)
+        if decision == "sql_agent":
 
-        context_text = "\n".join(context)
+            sql, result = sql_agent.run(question)
 
-        eval_result = evaluator.evaluate(question, answer, context_text)
+            record = {
+                "question": question,
+                "agent": "sql_agent",
+                "sql": sql,
+                "result": result
+            }
 
-        is_hallucinated = "true" in eval_result.lower()
+        else:
 
-        if is_hallucinated:
-            hallucinations += 1
+            answer, context = rag_agent.run(question)
 
-        record = {
-            "question": question,
-            "answer": answer,
-            "context": context,
-            "evaluation": eval_result
-        }
+            eval_result = evaluator.evaluate(
+                question,
+                answer,
+                context
+            )
+
+            record = {
+                "question": question,
+                "agent": "rag_agent",
+                "answer": answer,
+                "context": context,
+                "evaluation": eval_result
+            }
 
         results.append(record)
 
-        print("\nQUESTION:", question)
-        print("ANSWER:", answer)
-        print("EVAL:", eval_result)
+        print("\nProcessed:", question)
 
-    total = len(dataset)
-
-    summary = {
-        "total_questions": total,
-        "hallucinations": hallucinations,
-        "hallucination_rate": hallucinations / total
-    }
+        time.sleep(2)  # avoid Gemini rate limit
 
     output = {
-        "summary": summary,
+        "timestamp": time.time(),
         "results": results
     }
 
-    timestamp = int(time.time())
+    os.makedirs("results", exist_ok=True)
 
-    output_file = f"results/eval_results_{timestamp}.json"
+    file_path = f"results/eval_results_{int(time.time())}.json"
 
-    with open(output_file, "w") as f:
+    with open(file_path, "w") as f:
         json.dump(output, f, indent=2)
 
-    print("\nSaved results to:", output_file)
+    print("\nSaved results to:", file_path)
 
 
 if __name__ == "__main__":
-
     run_evaluation("data/eval_dataset.json")

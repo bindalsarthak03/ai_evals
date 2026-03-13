@@ -2,6 +2,7 @@ import sqlite3
 import os
 from dotenv import load_dotenv
 from google import genai
+import re
 
 load_dotenv()
 
@@ -45,7 +46,10 @@ Rules:
         )
 
         sql = response.text.strip()
-
+        
+        # remove markdown formatting
+        sql = re.sub(r"```sql|```", "", sql).strip()
+        
         # Basic safety check
         if not sql.lower().startswith("select"):
             return sql, "Unsafe query blocked"

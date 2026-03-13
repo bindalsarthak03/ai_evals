@@ -1,6 +1,7 @@
+import json
 from google import genai
-from dotenv import load_dotenv
 import os
+from dotenv import load_dotenv
 
 load_dotenv()
 
@@ -12,7 +13,7 @@ class EvalsEngine:
     def evaluate(self, question, answer, context):
 
         prompt = f"""
-You are evaluating whether an LLM answer is supported by the provided context.
+You are evaluating whether an LLM answer is supported by context.
 
 Question:
 {question}
@@ -23,9 +24,10 @@ Answer:
 Context:
 {context}
 
-Return JSON:
+Return ONLY JSON:
+
 {{
-  "is_hallucinated": true or false
+ "is_hallucinated": true or false
 }}
 """
 
@@ -34,4 +36,12 @@ Return JSON:
             contents=prompt
         )
 
-        return response.text
+        text = response.text.strip()
+
+        # remove markdown formatting if present
+        text = text.replace("```json", "").replace("```", "").strip()
+
+        try:
+            return json.loads(text)
+        except Exception:
+            return {"is_hallucinated": None}
